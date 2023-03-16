@@ -219,61 +219,61 @@ def _fetch_single_image_from_path(path):
 
 # Similar to MinimagenDataset but instead of needing IMAGE_URLS it used if you already have the images saved (to a path)
 class MinimagenDatasetPath(torch.utils.data.Dataset):
-        def __init__(self, hf_dataset, *, encoder_name: str, max_length: int,
-                 side_length: int, train: bool = True, img_transform=None):
-            """
-            MinImagen Dataset object
+    def __init__(self, hf_dataset, *, encoder_name: str, max_length: int,
+             side_length: int, train: bool = True, img_transform=None):
+        """
+        MinImagen Dataset object
 
-            :param hf_dataset: HuggingFace :code:`False` Dataset object (or any dictionary with a similar structure:
+        :param hf_dataset: HuggingFace :code:`False` Dataset object (or any dictionary with a similar structure:
 
-                {:code:`train`: {:code:`image_path`: :code:`list(<IMAGE_PATHS>)`, :code:`caption`: :code:`list(<CAPTIONS>)`}
+            {:code:`train`: {:code:`image_path`: :code:`list(<IMAGE_PATHS>)`, :code:`caption`: :code:`list(<CAPTIONS>)`}
 
-                :code:`validation`: {:code:`image_path`: :code:`list(<IMAGE_PATHS>)`, :code:`caption`: :code:`list(<CAPTIONS>)`}}
+            :code:`validation`: {:code:`image_path`: :code:`list(<IMAGE_PATHS>)`, :code:`caption`: :code:`list(<CAPTIONS>)`}}
 
-                )
+            )
 
-            :param encoder_name: Name of the T5 encoder to use.
-            :param max_length: Maximum number of words allowed in a given caption.
-            :param side_length: Side length to resize all images to.
-            :param train: Whether train or test dataset
-            :param img_transform: (optional) Transforms to be applied on a sample in addition to default :code:`ToTensor()` and
-                resizing to :code:`side_length` (applied after the defaults)
-            """
+        :param encoder_name: Name of the T5 encoder to use.
+        :param max_length: Maximum number of words allowed in a given caption.
+        :param side_length: Side length to resize all images to.
+        :param train: Whether train or test dataset
+        :param img_transform: (optional) Transforms to be applied on a sample in addition to default :code:`ToTensor()` and
+            resizing to :code:`side_length` (applied after the defaults)
+        """
 
-            split = "train" if train else "validation"
+        split = "train" if train else "validation"
 
-            self.paths = hf_dataset[f"{split}"]['image_path']
-            self.captions = hf_dataset[f"{split}"]['caption']
+        self.paths = hf_dataset[f"{split}"]['image_path']
+        self.captions = hf_dataset[f"{split}"]['caption']
 
-            if img_transform is None:
-                self.img_transform = Compose([ToTensor(), _Rescale(side_length)])
-            else:
-                self.img_transform = Compose([ToTensor(), _Rescale(side_length), img_transform])
-            self.encoder_name = encoder_name
-            self.max_length = max_length
+        if img_transform is None:
+            self.img_transform = Compose([ToTensor(), _Rescale(side_length)])
+        else:
+            self.img_transform = Compose([ToTensor(), _Rescale(side_length), img_transform])
+        self.encoder_name = encoder_name
+        self.max_length = max_length
 
-        def __len__(self):
-            return len(self.paths)
+    def __len__(self):
+        return len(self.paths)
 
-        def __getitem__(self, idx):
-            if torch.is_tensor(idx):
-                idx = idx.tolist()
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
 
-            img = _fetch_single_image_from_path(self.paths[idx])
-            if img is None:
-                return None
-            elif self.img_transform:
-                img = self.img_transform(img)
+        img = _fetch_single_image_from_path(self.paths[idx])
+        if img is None:
+            return None
+        elif self.img_transform:
+            img = self.img_transform(img)
 
-            # Have to check None again because `Resize` transform can return None
-            if img is None:
-                return None
-            elif img.shape[0] != 3:
-                return None
+        # Have to check None again because `Resize` transform can return None
+        if img is None:
+            return None
+        elif img.shape[0] != 3:
+            return None
 
-            enc, msk = t5_encode_text([self.captions[idx]], self.encoder_name, self.max_length)
+        enc, msk = t5_encode_text([self.captions[idx]], self.encoder_name, self.max_length)
 
-            return {'image': img, 'encoding': enc, 'mask': msk}
+        return {'image': img, 'encoding': enc, 'mask': msk}
 
 class MinimagenDataset(torch.utils.data.Dataset):
     def __init__(self, hf_dataset, *, encoder_name: str, max_length: int,
