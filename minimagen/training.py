@@ -217,7 +217,7 @@ def _fetch_single_image_from_path(path):
     except:
         print("PIL Image was unable to open the image from the path")
 
-# Similar to Minimagen but instead of needing IMAGE_URLS it used if you already have the images saved (to a path)
+# Similar to MinimagenDataset but instead of needing IMAGE_URLS it used if you already have the images saved (to a path)
 class MinimagenDatasetPath(torch.utils.data.Dataset):
         def __init__(self, hf_dataset, *, encoder_name: str, max_length: int,
                  side_length: int, train: bool = True, img_transform=None):
